@@ -12,13 +12,21 @@ osx.kivy_version = 1.9.1
 icon.filename = %(source.dir)s/data/logo/logo.png
 presplash.filename = %(source.dir)s/data/logo/tokio.jpg
 fullscreen = 0
+
 android.archs = arm64-v8a
 android.api = 33
 android.minapi = 24
 android.sdk = 33
 android.ndk = 25c
 android.accept_sdk_license = True
-android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1
+android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1, androidx.constraintlayout:constraintlayout:2.1.4
+android.gradle_options = org.gradle.jvmargs=-Xmx2048m
+android.add_src = 
+android.permissions = INTERNET
+android.features = 
+android.uses_library = 
+android.entrypoint = org.kivy.android.PythonActivity
+android.bootstrap = sdl2
 log_level = 2
 
 [buildozer]
