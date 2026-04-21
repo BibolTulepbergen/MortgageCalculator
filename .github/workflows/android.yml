@@ -16,18 +16,26 @@ jobs:
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev
           pip install Cython==0.29.33 buildozer
 
+      - name: Setup Android SDK licenses
+        run: |
+          mkdir -p $HOME/.android
+          echo "y" | $ANDROID_SDK_ROOT/tools/bin/sdkmanager --licenses || true
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
       - name: Build 32-bit APK
         run: |
           buildozer -v android debug --spec buildozer_32.spec
-          mv bin/*.apk bin/app-32bit-debug.apk
+          mv bin/*.apk bin/app-32bit-debug.apk 2>/dev/null || true
 
       - name: Clean before next build
-        run: buildozer android clean
+        run: |
+          rm -rf .buildozer
+          buildozer android clean
 
       - name: Build 64-bit APK
         run: |
           buildozer -v android debug --spec buildozer_64.spec
-          mv bin/*.apk bin/app-64bit-debug.apk
+          mv bin/*.apk bin/app-64bit-debug.apk 2>/dev/null || true
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
