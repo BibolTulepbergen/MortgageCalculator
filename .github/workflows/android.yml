@@ -114,3 +114,12 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find APK location
+        run: |
+          echo "=== Все APK в проекте ==="
+          find /home/runner/work -name "*.apk" 2>/dev/null
+          echo "=== .buildozer папка ==="
+          find .buildozer -name "*.apk" 2>/dev/null
+          echo "=== bin/ ==="
+          ls -lah bin/ 2>/dev/null || echo "bin пустой"
