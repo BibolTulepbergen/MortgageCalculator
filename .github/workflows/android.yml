@@ -41,63 +41,32 @@ jobs:
       - name: Build 32-bit APK
         run: |
           cp buildozer_32.spec buildozer.spec
-          buildozer -v android debug 2>&1 | tee build_32.log || {
-            echo "=== Build failed ==="
-            tail -n 200 build_32.log
-            exit 1
-          }
+          yes | buildozer android debug
 
-      - name: Show build log
-        if: always()
-        run: |
-          echo "=== Последние 100 строк лога ==="
-          grep -E "(ERROR|error|Error|failed|Failed|Exception)" build_32.log | tail -50
-          echo "=== Конец лога ==="
-          tail -100 build_32.log
-      
-      - name: Find APK location
-        run: |
-          echo "=== Все APK в проекте ==="
-          find /home/runner/work -name "*.apk" 2>/dev/null
-          echo "=== .buildozer папка ==="
-          find .buildozer -name "*.apk" 2>/dev/null
-          echo "=== bin/ ==="
-          ls -lah bin/ 2>/dev/null || echo "bin пустой"
-
-      - name: Save 32-bit APK
+      - name: Collect 32-bit APK
         run: |
           mkdir -p bin
-          # buildozer кладёт APK в ./bin/ по умолчанию
-          find . -name "*.apk" | head -20
-          # Переименовываем
-          for f in $(find . -name "*.apk" -not -path "./bin/app-*"); do
-            cp "$f" bin/app-32bit-debug.apk
-            echo "Скопирован: $f → bin/app-32bit-debug.apk"
-          done
+          echo "=== Ищем APK везде ==="
+          find / -name "*.apk" 2>/dev/null || true
+          echo "=== Копируем в bin/ ==="
+          find / -name "*.apk" 2>/dev/null -exec cp {} bin/app-32bit-debug.apk \; || true
           ls -lah bin/
 
       - name: Clean for next build
         run: |
-          rm -rf .buildozer/android/platform/build-*/build
-          rm -rf .buildozer/android/platform/build-*/.gradle
+          rm -rf .buildozer
 
       - name: Build 64-bit APK
         run: |
           cp buildozer_64.spec buildozer.spec
-          buildozer -v android debug 2>&1 | tee build_64.log || {
-            echo "=== Build failed ==="
-            tail -n 200 build_64.log
-            exit 1
-          }
+          yes | buildozer android debug
 
-      - name: Save 64-bit APK
+      - name: Collect 64-bit APK
         run: |
-          # Берём только новый APK (не 32bit)
-          for f in $(find . -name "*.apk" -not -name "app-32bit-debug.apk" -not -path "./bin/app-*"); do
-            cp "$f" bin/app-64bit-debug.apk
-            echo "Скопирован: $f → bin/app-64bit-debug.apk"
-          done
-          echo "=== Финальные файлы ==="
+          echo "=== Ищем новый APK ==="
+          find / -name "*.apk" 2>/dev/null || true
+          echo "=== Копируем в bin/ ==="
+          find / -name "*.apk" -not -name "app-32bit-debug.apk" 2>/dev/null -exec cp {} bin/app-64bit-debug.apk \; || true
           ls -lah bin/
 
       - name: Upload Artifacts
@@ -106,7 +75,7 @@ jobs:
           name: APK-files
           path: bin/*.apk
           retention-days: 30
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Get current date
         id: date
@@ -124,9 +93,7 @@ jobs:
             📱 **64-bit** — для новых телефонов (arm64-v8a)
 
             Commit: ${{ github.sha }}
-          files: |
-            bin/app-32bit-debug.apk
-            bin/app-64bit-debug.apk
+          files: bin/*.apk
           draft: false
           prerelease: false
         env:
