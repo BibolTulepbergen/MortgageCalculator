@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,10 +21,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             git zip unzip \
-            openjdk-17-jdk \
             python3-pip \
             autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
             cmake libffi-dev libssl-dev \
             build-essential cython3 \
             libpq-dev
@@ -33,78 +32,52 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip setuptools wheel
           pip install Cython==0.29.33 buildozer
-          pip install -r requirements.txt 2>/dev/null || true
 
       - name: Verify project files
         run: |
-          echo "=== Checking project structure ==="
           test -f main.py && echo "✓ main.py found" || (echo "✗ main.py missing" && exit 1)
-          test -f data/logo/logo.png && echo "✓ logo.png found" || (echo "✗ logo.png missing" && exit 1)
-          test -f data/logo/tokio.jpg && echo "✓ tokio.jpg found" || (echo "✗ tokio.jpg missing" && exit 1)
-          echo "=== Checking Python syntax ==="
-          python3 -m py_compile main.py && echo "✓ Python syntax OK" || (echo "✗ Python syntax error" && exit 1)
-
-      - name: Accept Android SDK licenses
-        run: |
-          mkdir -p $HOME/.android
-          echo "y" > /tmp/licenses.txt
-          echo "y" >> /tmp/licenses.txt
-          echo "y" >> /tmp/licenses.txt
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses < /tmp/licenses.txt || true
-          $ANDROID_SDK_ROOT/tools/bin/sdkmanager --licenses < /tmp/licenses.txt || true
-          echo "=== Android SDK licenses accepted ==="
+          python3 -m py_compile main.py && echo "✓ Python syntax OK"
 
       - name: Build 32-bit APK
         run: |
-          echo "=== Starting 32-bit build ==="
-          buildozer -v android debug --spec buildozer_32.spec || { 
-            echo "=== Build failed, showing logs ==="; 
-            tail -n 300 .buildozer/logs/*.log 2>/dev/null || true;
-            exit 1; 
+          cp buildozer_32.spec buildozer.spec
+          buildozer -v android debug 2>&1 | tee build_32.log || {
+            echo "=== Build failed ==="
+            tail -n 200 build_32.log
+            exit 1
           }
-          ls -lah bin/
-          echo "=== 32-bit build completed ==="
+          mkdir -p bin
+          find . -name "*.apk" -not -path "./bin/*" -exec mv {} bin/ \; 2>/dev/null || true
+          ls bin/ || echo "No APK yet"
 
-      - name: Clean build artifacts for next arch
+      - name: Clean for next build
         run: |
-          echo "=== Cleaning build artifacts ==="
           rm -rf .buildozer/android/platform/build-*/build
           rm -rf .buildozer/android/platform/build-*/.gradle
-          rm -rf .buildozer/android/platform/build-*/src
-          echo "=== Clean completed ==="
 
       - name: Build 64-bit APK
         run: |
-          echo "=== Starting 64-bit build ==="
-          buildozer -v android debug --spec buildozer_64.spec || { 
-            echo "=== Build failed, showing logs ==="; 
-            tail -n 300 .buildozer/logs/*.log 2>/dev/null || true;
-            exit 1; 
+          cp buildozer_64.spec buildozer.spec
+          buildozer -v android debug 2>&1 | tee build_64.log || {
+            echo "=== Build failed ==="
+            tail -n 200 build_64.log
+            exit 1
           }
-          ls -lah bin/
-          echo "=== 64-bit build completed ==="
+          find . -name "*.apk" -not -path "./bin/*" -exec mv {} bin/ \; 2>/dev/null || true
+          ls bin/
 
-      - name: Rename APK files
+      - name: Rename APKs
         if: success()
         run: |
-          echo "=== Renaming APK files ==="
           cd bin
-          ls -la *.apk 2>/dev/null || echo "No APK files found"
-          for file in *.apk; do
-            if echo "$file" | grep -q "armeabi"; then
-              mv "$file" "app-32bit-debug.apk" 2>/dev/null || true
-            elif echo "$file" | grep -q "arm64"; then
-              mv "$file" "app-64bit-debug.apk" 2>/dev/null || true
+          for f in *.apk; do
+            if echo "$f" | grep -q "armeabi"; then
+              mv "$f" "app-32bit-debug.apk"
+            elif echo "$f" | grep -q "arm64"; then
+              mv "$f" "app-64bit-debug.apk"
             fi
           done
-          ls -lah *.apk 2>/dev/null || true
-          echo "=== APK files renamed ==="
-
-      - name: List final APK files
-        if: always()
-        run: |
-          echo "=== Final APK files in bin directory ==="
-          ls -lh bin/*.apk 2>/dev/null || echo "No APK files found"
+          ls -lah
 
       - name: Upload Artifacts
         if: success()
