@@ -7,8 +7,6 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 0.2
 requirements = python3==3.11, kivy==2.3.0, kivymd==1.2.0, pillow, sdl2_ttf==2.0.15
 orientation = portrait
-osx.python_version = 3
-osx.kivy_version = 1.9.1
 icon.filename = %(source.dir)s/data/logo/logo.png
 presplash.filename = %(source.dir)s/data/logo/tokio.jpg
 fullscreen = 0
@@ -19,12 +17,9 @@ android.minapi = 24
 android.sdk = 33
 android.ndk = 25c
 android.accept_sdk_license = True
-android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1, androidx.constraintlayout:constraintlayout:2.1.4
+android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1,androidx.constraintlayout:constraintlayout:2.1.4
 android.gradle_options = org.gradle.jvmargs=-Xmx2048m
-android.add_src = 
 android.permissions = INTERNET
-android.features = 
-android.uses_library = 
 android.entrypoint = org.kivy.android.PythonActivity
 android.bootstrap = sdl2
 log_level = 2

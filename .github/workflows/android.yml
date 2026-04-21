@@ -35,51 +35,75 @@ jobs:
           pip install Cython==0.29.33 buildozer
           pip install -r requirements.txt 2>/dev/null || true
 
+      - name: Verify project files
+        run: |
+          echo "=== Checking project structure ==="
+          test -f main.py && echo "✓ main.py found" || (echo "✗ main.py missing" && exit 1)
+          test -f data/logo/logo.png && echo "✓ logo.png found" || (echo "✗ logo.png missing" && exit 1)
+          test -f data/logo/tokio.jpg && echo "✓ tokio.jpg found" || (echo "✗ tokio.jpg missing" && exit 1)
+          echo "=== Checking Python syntax ==="
+          python3 -m py_compile main.py && echo "✓ Python syntax OK" || (echo "✗ Python syntax error" && exit 1)
+
       - name: Accept Android SDK licenses
         run: |
           mkdir -p $HOME/.android
           echo "y" > /tmp/licenses.txt
-          cat /tmp/licenses.txt | head -c 1000 > $HOME/.android/repositories.cfg || true
+          echo "y" >> /tmp/licenses.txt
+          echo "y" >> /tmp/licenses.txt
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses < /tmp/licenses.txt || true
           $ANDROID_SDK_ROOT/tools/bin/sdkmanager --licenses < /tmp/licenses.txt || true
+          echo "=== Android SDK licenses accepted ==="
 
       - name: Build 32-bit APK
         run: |
           echo "=== Starting 32-bit build ==="
           buildozer -v android debug --spec buildozer_32.spec || { 
             echo "=== Build failed, showing logs ==="; 
-            tail -n 200 .buildozer/android/platform/build-*/build/outputs/apk/debug/*.log 2>/dev/null || true;
+            tail -n 300 .buildozer/logs/*.log 2>/dev/null || true;
             exit 1; 
           }
-          ls -la bin/
-          if [ -f bin/mortgagecalc-0.2-debug.apk ]; then
-            mv bin/mortgagecalc-0.2-debug.apk bin/app-32bit-debug.apk
-          fi
+          ls -lah bin/
           echo "=== 32-bit build completed ==="
 
-      - name: Clean before 64-bit build
+      - name: Clean build artifacts for next arch
         run: |
+          echo "=== Cleaning build artifacts ==="
           rm -rf .buildozer/android/platform/build-*/build
           rm -rf .buildozer/android/platform/build-*/.gradle
+          rm -rf .buildozer/android/platform/build-*/src
+          echo "=== Clean completed ==="
 
       - name: Build 64-bit APK
         run: |
           echo "=== Starting 64-bit build ==="
           buildozer -v android debug --spec buildozer_64.spec || { 
             echo "=== Build failed, showing logs ==="; 
-            tail -n 200 .buildozer/android/platform/build-*/build/outputs/apk/debug/*.log 2>/dev/null || true;
+            tail -n 300 .buildozer/logs/*.log 2>/dev/null || true;
             exit 1; 
           }
-          ls -la bin/
-          if [ -f bin/mortgagecalc-0.2-debug.apk ]; then
-            mv bin/mortgagecalc-0.2-debug.apk bin/app-64bit-debug.apk
-          fi
+          ls -lah bin/
           echo "=== 64-bit build completed ==="
 
-      - name: List APK files
+      - name: Rename APK files
+        if: success()
+        run: |
+          echo "=== Renaming APK files ==="
+          cd bin
+          ls -la *.apk 2>/dev/null || echo "No APK files found"
+          for file in *.apk; do
+            if echo "$file" | grep -q "armeabi"; then
+              mv "$file" "app-32bit-debug.apk" 2>/dev/null || true
+            elif echo "$file" | grep -q "arm64"; then
+              mv "$file" "app-64bit-debug.apk" 2>/dev/null || true
+            fi
+          done
+          ls -lah *.apk 2>/dev/null || true
+          echo "=== APK files renamed ==="
+
+      - name: List final APK files
         if: always()
         run: |
-          echo "=== APK files in bin directory ==="
+          echo "=== Final APK files in bin directory ==="
           ls -lh bin/*.apk 2>/dev/null || echo "No APK files found"
 
       - name: Upload Artifacts
@@ -89,3 +113,4 @@ jobs:
           name: multi-arch-apks
           path: bin/*.apk
           retention-days: 30
+          if-no-files-found: warn

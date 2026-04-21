@@ -1,10 +1,18 @@
+
 from kivymd.app import MDApp
 from kivymd.uix.label import MDLabel
 
 
 class MainApp(MDApp):
+    """Main application class for Mortgage Calculator"""
+    
     def build(self):
-        return MDLabel(text="Hello, World", halign="center")
+        """Build the application UI"""
+        return MDLabel(
+            text="Hello, World",
+            halign="center"
+        )
 
 
-MainApp().run() 
+if __name__ == '__main__':
+    MainApp().run()

@@ -25,6 +25,12 @@ requirements = python3==3.11, kivy==2.3.0, kivymd==1.2.0, pillow, sdl2_ttf==2.0.
 # Ориентация экрана
 orientation = portrait
 
+# Иконка приложения (логотип)
+icon.filename = %(source.dir)s/data/logo/logo.png
+
+# Заставка при запуске (сплэш-скрин)
+presplash.filename = %(source.dir)s/data/logo/tokio.jpg
+
 # --- Android специфичные настройки ---
 
 # (Сними решетку, если хочешь полноэкранный режим)
@@ -33,13 +39,17 @@ orientation = portrait
 # Архитектура. Для большинства тестов на реальных телефонах оставь эту:
 android.archs = armeabi-v7a
 
-# Минимальная и целевая версия API Android (лучше не трогай)
+# Минимальная и целевая версия API Android
 android.api = 33
 android.minapi = 24
 android.sdk = 33
 android.ndk = 25c
 android.accept_sdk_license = True
-android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1
+android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1, androidx.constraintlayout:constraintlayout:2.1.4
+android.gradle_options = org.gradle.jvmargs=-Xmx2048m
+android.permissions = INTERNET
+android.entrypoint = org.kivy.android.PythonActivity
+android.bootstrap = sdl2
 
 # Уровень логирования (2 — самый подробный, чтобы видеть ошибки)
 log_level = 2

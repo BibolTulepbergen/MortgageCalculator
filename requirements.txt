@@ -1,5 +1,4 @@
-python3==3.11
 kivy==2.3.0
 kivymd==1.2.0
 pillow
-sdl2-ttf==2.0.15
+sdl2_ttf==2.0.15

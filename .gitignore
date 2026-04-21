@@ -1,2 +1,10 @@
 /.vscode
 /venv
+/.buildozer
+/bin
+*.pyc
+__pycache__/
+*.egg-info/
+.env
+.DS_Store
+*.log
