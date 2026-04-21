@@ -4,20 +4,17 @@ language: python
 python:
   - "3.8"
 
-# Команды для подготовки системы
 install:
   - sudo apt update
   - sudo apt install -y git zip unzip openjdk-8-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
   - pip install --upgrade pip
-  - pip install --upgrade Cython==0.29.33 virtualenv  # Обновил версию Cython для стабильности
+  - pip install --upgrade Cython==0.29.33 virtualenv
   - pip install buildozer
   - export PATH=$PATH:~/.local/bin/
 
-# Основной процесс сборки
 script:
   - yes | buildozer android debug
 
-# Загрузка готового файла в Релизы GitHub
 before_deploy:
   - echo "Подготовка к деплою..."
   - ls bin/
@@ -25,9 +22,15 @@ before_deploy:
 deploy:
   provider: releases
   api_key: $GITHUB_TOKEN
-  # ВНИМАНИЕ: Проверь, что имя файла в bin/ ТОЧНО такое же, как ниже
-  file: "bin/mortgagecalc-0.1-armeabi-v7a-debug.apk"
+  file_glob: true
+  file: "bin/*.apk"
   skip_cleanup: true
   on:
-    branch: main  # Если у тебя ветка называется main, замени на main
+    branch: main
     tags: false
+
+cache:
+  pip: true
+  directories:
+    - $HOME/.buildozer
+    - $HOME/.gradle
