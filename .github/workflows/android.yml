@@ -1,4 +1,4 @@
-name: Android Build
+name: Build 32-bit and 64-bit APK
 on:
   push:
     branches: [ master, main ]
@@ -6,30 +6,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev libbz2-dev libsqlite3-dev
-          pip install --upgrade pip
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev
           pip install Cython==0.29.33 buildozer
 
-      - name: Build with Buildozer
+      - name: Build 32-bit APK
         run: |
-          yes | buildozer android debug
-        continue-on-error: false
+          buildozer -v android debug --spec buildozer_32.spec
+          mv bin/*.apk bin/app-32bit-debug.apk
 
-      - name: Upload APK
+      - name: Clean before next build
+        run: buildozer android clean
+
+      - name: Build 64-bit APK
+        run: |
+          buildozer -v android debug --spec buildozer_64.spec
+          mv bin/*.apk bin/app-64bit-debug.apk
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mortgage-calculator-apk
+          name: multi-arch-apks
           path: bin/*.apk
