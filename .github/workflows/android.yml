@@ -46,6 +46,14 @@ jobs:
             tail -n 200 build_32.log
             exit 1
           }
+
+      - name: Show build log
+        if: always()
+        run: |
+          echo "=== Последние 100 строк лога ==="
+          grep -E "(ERROR|error|Error|failed|Failed|Exception)" build_32.log | tail -50
+          echo "=== Конец лога ==="
+          tail -100 build_32.log
       
       - name: Find APK location
         run: |
