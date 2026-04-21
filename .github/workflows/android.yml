@@ -82,9 +82,7 @@ jobs:
           done
           ls -lah
 
-      # -----------------------------------------------
-      # АВТОМАТИЧЕСКИЙ RELEASE
-      # -----------------------------------------------
+
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
