@@ -82,7 +82,21 @@ jobs:
           done
           ls -lah
 
+      - name: Debug - найти все APK
+        if: always()
+        run: |
+          echo "=== Ищем все APK ==="
+          find / -name "*.apk" 2>/dev/null || echo "Нет APK нигде"
+          echo "=== Содержимое рабочей папки ==="
+          ls -lah
+          echo "=== bin/ ==="
+          ls -lah bin/ 2>/dev/null || echo "bin/ пустой или не существует"
+          echo "=== .buildozer/bin/ ==="
+          ls -lah .buildozer/android/platform/build-*/dists/*/bin/ 2>/dev/null || true
 
+      # -----------------------------------------------
+      # АВТОМАТИЧЕСКИЙ RELEASE
+      # -----------------------------------------------
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
