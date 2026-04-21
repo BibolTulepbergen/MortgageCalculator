@@ -17,12 +17,15 @@ android.minapi = 24
 android.ndk = 25c
 android.accept_sdk_license = True
 android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1,androidx.constraintlayout:constraintlayout:2.1.4
-android.gradle_options = org.gradle.jvmargs=-Xmx2048m
+android.gradle_options = org.gradle.jvmargs=-Xmx2048m,org.gradle.parallel=true
 android.permissions = INTERNET
 android.entrypoint = org.kivy.android.PythonActivity
 android.bootstrap = sdl2
+
 log_level = 2
+warn_on_root = 1
 
 [buildozer]
 log_level = 2
 bin_dir = ./bin
+warn_on_root = 1

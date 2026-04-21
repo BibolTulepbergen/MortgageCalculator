@@ -1,0 +1,13 @@
+[app]
+
+[buildozer]
+log_level = 2
+warn_on_root = 1
+
+[buildozer:android]
+accept_sdk_license = True
+skip_update = False
+arch = armeabi-v7a,arm64-v8a
+api = 33
+minapi = 24
+ndk = 25c
