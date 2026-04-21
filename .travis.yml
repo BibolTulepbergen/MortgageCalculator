@@ -1,33 +1,43 @@
 os: linux
-dist: focal
+dist: jammy
 language: python
 python:
-  - "3.8"
+  - "3.10"
 
 install:
   - sudo apt update
-  - sudo apt install -y git zip unzip openjdk-8-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-  - pip install --upgrade pip
-  - pip install --upgrade Cython==0.29.33 virtualenv
-  - pip install buildozer
-  - export PATH=$PATH:~/.local/bin/
+  - sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential cython3
+  - pip install --upgrade pip setuptools wheel
+  - pip install Cython==0.29.33 buildozer
 
 script:
+  - echo "Компилируем 32-битную версию..."
+  - cp buildozer_32.spec buildozer.spec
   - yes | buildozer android debug
+  - ls -la bin/
+  - rm -rf .buildozer
 
-before_deploy:
-  - echo "Подготовка к деплою..."
-  - ls bin/
+  - echo "Компилируем 64-битную версию..."
+  - cp buildozer_64.spec buildozer.spec
+  - yes | buildozer android debug
+  - ls -la bin/
 
 deploy:
-  provider: releases
-  api_key: $GITHUB_TOKEN
-  file_glob: true
-  file: "bin/*.apk"
-  skip_cleanup: true
-  on:
-    branch: master
-    tags: false
+  - provider: releases
+    api_key: $TOKENS
+    file_glob: true
+    file: "bin/*armeabi*.apk"
+    skip_cleanup: true
+    on:
+      branch: main
+
+  - provider: releases
+    api_key: $TOKENS
+    file_glob: true
+    file: "bin/*arm64*.apk"
+    skip_cleanup: true
+    on:
+      branch: main
 
 cache:
   pip: true

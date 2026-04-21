@@ -1,4 +1,4 @@
-name: Build APK
+name: Build 32-bit and 64-bit APK
 on:
   push:
     branches: [ master, main ]
@@ -10,24 +10,124 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          command: android debug
-          buildozer_version: stable
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Upload APK
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip \
+            python3-pip \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev \
+            build-essential cython3 \
+            libpq-dev
+
+      - name: Install Python build tools
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip install Cython==0.29.33 buildozer
+
+      - name: Verify project files
+        run: |
+          test -f main.py && echo "✓ main.py found" || (echo "✗ main.py missing" && exit 1)
+          python3 -m py_compile main.py && echo "✓ Python syntax OK"
+
+      - name: Build 32-bit APK
+        run: |
+          cp buildozer_32.spec buildozer.spec
+          buildozer -v android debug 2>&1 | tee build_32.log || {
+            echo "=== Build failed ==="
+            tail -n 200 build_32.log
+            exit 1
+          }
+
+      - name: Show build log
+        if: always()
+        run: |
+          echo "=== Последние 100 строк лога ==="
+          grep -E "(ERROR|error|Error|failed|Failed|Exception)" build_32.log | tail -50
+          echo "=== Конец лога ==="
+          tail -100 build_32.log
+      
+      - name: Find APK location
+        run: |
+          echo "=== Все APK в проекте ==="
+          find /home/runner/work -name "*.apk" 2>/dev/null
+          echo "=== .buildozer папка ==="
+          find .buildozer -name "*.apk" 2>/dev/null
+          echo "=== bin/ ==="
+          ls -lah bin/ 2>/dev/null || echo "bin пустой"
+
+      - name: Save 32-bit APK
+        run: |
+          mkdir -p bin
+          # buildozer кладёт APK в ./bin/ по умолчанию
+          find . -name "*.apk" | head -20
+          # Переименовываем
+          for f in $(find . -name "*.apk" -not -path "./bin/app-*"); do
+            cp "$f" bin/app-32bit-debug.apk
+            echo "Скопирован: $f → bin/app-32bit-debug.apk"
+          done
+          ls -lah bin/
+
+      - name: Clean for next build
+        run: |
+          rm -rf .buildozer/android/platform/build-*/build
+          rm -rf .buildozer/android/platform/build-*/.gradle
+
+      - name: Build 64-bit APK
+        run: |
+          cp buildozer_64.spec buildozer.spec
+          buildozer -v android debug 2>&1 | tee build_64.log || {
+            echo "=== Build failed ==="
+            tail -n 200 build_64.log
+            exit 1
+          }
+
+      - name: Save 64-bit APK
+        run: |
+          # Берём только новый APK (не 32bit)
+          for f in $(find . -name "*.apk" -not -name "app-32bit-debug.apk" -not -path "./bin/app-*"); do
+            cp "$f" bin/app-64bit-debug.apk
+            echo "Скопирован: $f → bin/app-64bit-debug.apk"
+          done
+          echo "=== Финальные файлы ==="
+          ls -lah bin/
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: APK
-          path: ${{ steps.buildozer.outputs.filename }}
+          name: APK-files
+          path: bin/*.apk
+          retention-days: 30
+          if-no-files-found: error
 
-      - name: Create Release
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: "Release #${{ github.run_number }}"
-          files: ${{ steps.buildozer.outputs.filename }}
+          tag_name: v${{ steps.date.outputs.date }}
+          name: "Release ${{ steps.date.outputs.date }}"
+          body: |
+            🤖 Автоматическая сборка
+
+            📱 **32-bit** — для старых телефонов (armeabi-v7a)
+            📱 **64-bit** — для новых телефонов (arm64-v8a)
+
+            Commit: ${{ github.sha }}
+          files: |
+            bin/app-32bit-debug.apk
+            bin/app-64bit-debug.apk
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
