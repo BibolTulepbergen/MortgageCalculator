@@ -47,15 +47,17 @@ jobs:
             exit 1
           }
 
-      - name: Rename 32-bit APK
+      - name: Save 32-bit APK
         run: |
           mkdir -p bin
-          find . -name "*.apk" -not -path "./bin/*" -exec mv {} bin/ \; 2>/dev/null || true
-          cd bin
-          for f in *.apk; do
-            mv "$f" "app-32bit-debug.apk" 2>/dev/null || true
+          # buildozer кладёт APK в ./bin/ по умолчанию
+          find . -name "*.apk" | head -20
+          # Переименовываем
+          for f in $(find . -name "*.apk" -not -path "./bin/app-*"); do
+            cp "$f" bin/app-32bit-debug.apk
+            echo "Скопирован: $f → bin/app-32bit-debug.apk"
           done
-          ls -lah
+          ls -lah bin/
 
       - name: Clean for next build
         run: |
@@ -71,32 +73,24 @@ jobs:
             exit 1
           }
 
-      - name: Rename 64-bit APK
+      - name: Save 64-bit APK
         run: |
-          find . -name "*.apk" -not -path "./bin/*" -exec mv {} bin/ \; 2>/dev/null || true
-          cd bin
-          for f in *.apk; do
-            if echo "$f" | grep -qv "32bit"; then
-              mv "$f" "app-64bit-debug.apk" 2>/dev/null || true
-            fi
+          # Берём только новый APK (не 32bit)
+          for f in $(find . -name "*.apk" -not -name "app-32bit-debug.apk" -not -path "./bin/app-*"); do
+            cp "$f" bin/app-64bit-debug.apk
+            echo "Скопирован: $f → bin/app-64bit-debug.apk"
           done
-          ls -lah
+          echo "=== Финальные файлы ==="
+          ls -lah bin/
 
-      - name: Debug - найти все APK
-        if: always()
-        run: |
-          echo "=== Ищем все APK ==="
-          find / -name "*.apk" 2>/dev/null || echo "Нет APK нигде"
-          echo "=== Содержимое рабочей папки ==="
-          ls -lah
-          echo "=== bin/ ==="
-          ls -lah bin/ 2>/dev/null || echo "bin/ пустой или не существует"
-          echo "=== .buildozer/bin/ ==="
-          ls -lah .buildozer/android/platform/build-*/dists/*/bin/ 2>/dev/null || true
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK-files
+          path: bin/*.apk
+          retention-days: 30
+          if-no-files-found: error
 
-      # -----------------------------------------------
-      # АВТОМАТИЧЕСКИЙ RELEASE
-      # -----------------------------------------------
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
@@ -108,10 +102,10 @@ jobs:
           name: "Release ${{ steps.date.outputs.date }}"
           body: |
             🤖 Автоматическая сборка
-            
+
             📱 **32-bit** — для старых телефонов (armeabi-v7a)
             📱 **64-bit** — для новых телефонов (arm64-v8a)
-            
+
             Commit: ${{ github.sha }}
           files: |
             bin/app-32bit-debug.apk
