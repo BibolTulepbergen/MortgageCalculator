@@ -26,7 +26,7 @@ deploy:
   file: "bin/*.apk"
   skip_cleanup: true
   on:
-    branch: main
+    branch: master
     tags: false
 
 cache:
