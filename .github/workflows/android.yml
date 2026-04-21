@@ -26,13 +26,13 @@ jobs:
             autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 \
             cmake libffi-dev libssl-dev \
-            build-essential cython \
+            build-essential cython3 \
             libpq-dev
 
       - name: Install Python build tools
         run: |
-          python3 -m pip install --upgrade pip
-          pip install Cython==0.29.33 buildozer setuptools wheel
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip install Cython==0.29.33 buildozer
           pip install -r requirements.txt 2>/dev/null || true
 
       - name: Accept Android SDK licenses
