@@ -33,8 +33,7 @@ jobs:
             autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             cmake libffi-dev libssl-dev \
-            build-essential cython3 \
-            libpq-dev \
+            build-essential libpq-dev \
             lld
 
       - name: Install Python build tools
@@ -52,8 +51,7 @@ jobs:
       - name: Build 32-bit APK
         # Используем set -eo pipefail чтобы ошибка buildozer сразу прерывала сборку
         run: |
-          set -eo pipefail
-          yes | buildozer -v android debug 2>&1 | tee build_32bit.log
+          buildozer -v android debug
 
       - name: Retrieve 32-bit APK
         run: |
@@ -75,8 +73,7 @@ jobs:
 
       - name: Build 64-bit APK
         run: |
-          set -eo pipefail
-          yes | buildozer -v android debug 2>&1 | tee build_64bit.log
+          buildozer -v android debug
 
       - name: Retrieve 64-bit APK
         run: |

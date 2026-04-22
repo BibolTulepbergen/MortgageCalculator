@@ -5,7 +5,7 @@ package.domain = org.test
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 1.2
-requirements = python3==3.11,kivy==2.3.0,kivymd==1.2.0,pillow
+requirements = python3,kivy==2.3.0,kivymd==1.2.0,pillow
 orientation = portrait
 icon.filename = %(source.dir)s/data/logo/logo.png
 presplash.filename = %(source.dir)s/data/logo/tokio.jpg
