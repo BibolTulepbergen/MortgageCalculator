@@ -6,10 +6,41 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Обязательно используем ubuntu-20.04 или ubuntu-22.04
+    # На ubuntu-latest (24.04) убрали distutils из Python, что ломает сборку
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip \
+            python3-pip \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            cmake libffi-dev libssl-dev \
+            build-essential cython3 \
+            libpq-dev \
+            lld
+
+      - name: Install Python build tools
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip install Cython==0.29.33 buildozer virtualenv
 
       # --- 32-bit (armeabi-v7a) ---
       - name: Prepare 32-bit Spec
@@ -19,18 +50,16 @@ jobs:
           mkdir -p final_apks
 
       - name: Build 32-bit APK
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer_32
-        with:
-          command: buildozer android debug
-          buildozer_version: master
+        # Используем set -eo pipefail чтобы ошибка buildozer сразу прерывала сборку
+        run: |
+          set -eo pipefail
+          yes | buildozer -v android debug 2>&1 | tee build_32bit.log
 
       - name: Retrieve 32-bit APK
         run: |
-          # The newly built 32-bit APK should be in bin/ directory
           mv bin/*.apk final_apks/app-32bit-debug.apk || echo "Warning: No 32-bit APK found"
 
-      # --- Очистка кеша платформы для смены архитектуры ---
+      # --- Очистка кеша платформы ---
       - name: Clean platform cache
         run: |
           echo "Очистка кэша архитектуры для избежания конфликтов..."
@@ -45,15 +74,12 @@ jobs:
           rm -rf bin/ || true
 
       - name: Build 64-bit APK
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer_64
-        with:
-          command: buildozer android debug
-          buildozer_version: master
+        run: |
+          set -eo pipefail
+          yes | buildozer -v android debug 2>&1 | tee build_64bit.log
 
       - name: Retrieve 64-bit APK
         run: |
-          # The newly built 64-bit APK should be in bin/ directory
           mv bin/*.apk final_apks/app-64bit-debug.apk || echo "Warning: No 64-bit APK found"
 
       # --- Сохраняем Результаты ---
