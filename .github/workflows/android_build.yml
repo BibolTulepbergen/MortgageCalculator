@@ -1,0 +1,33 @@
+name: Build Android APK
+
+# Запуск сборки при отправке кода (push) в основную ветку, 
+# а также кнопкой вручную (workflow_dispatch)
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Загружаем код из репозитория на сервер GitHub
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Собираем APK с помощью специального Action для Kivy/Buildozer
+      # Этот экшен сам загрузит Linux-окружение, Java, Python и NDK.
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: master
+
+      # 3. Сохраняем собранный APK в раздел "Artifacts"
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-APK
+          path: ${{ steps.buildozer.outputs.filename }}

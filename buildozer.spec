@@ -4,7 +4,7 @@ package.name = mortgagecalc
 package.domain = org.test
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
-version = 0.2
+version = 1.2
 
 # Убрал sdl2_ttf — он встроен в kivy
 requirements = python3==3.11,kivy==2.3.0,kivymd==1.2.0,pillow
